@@ -7,7 +7,7 @@ load_dotenv()
 hf_token = os.getenv("HUGGINGFACE_TOKEN")
 
 
-snapshot_download(repo_id="meta-llama/Llama-2-7b-chat-hf",local_dir="./Llama-2-7b-Chat",token = hf_token)
+#snapshot_download(repo_id="meta-llama/Llama-2-7b-chat-hf",local_dir="./Llama-2-7b-Chat",token = hf_token)
 
 
 from lib.Sahara.attribution import safety_head_attribution
@@ -21,9 +21,9 @@ default_search_cfg = {
 }
 
 
-model_path = "./Llama-2-7b-Chat"
+model_path = "./models/Llama-3.2-3B-Instruct"
 data_path = "./exp_data/maliciousinstruct.csv"
-storage_path = "./exp_res/sahara/Llama-2-7b-Chat/"
+storage_path = "./exp_res/sahara/Llama-3.2-3B-Instruct/"
 if not os.path.exists(storage_path):
     os.makedirs(storage_path)
 
