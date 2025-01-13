@@ -2,7 +2,12 @@
 from huggingface_hub import snapshot_download
 import os
 from dotenv import load_dotenv
-from notify import send_email
+
+try :
+    from notify import send_email
+except ImportError:
+    pass
+
 def main():
     send_email(body = "job activated")
     load_dotenv()
@@ -43,5 +48,8 @@ if __name__=="__main__":
     try:
         main()
     except Exception as e:
-        send_email(body= f"Error has Occurred /n/n/n{e}")
-        raise Exception(e)
+        try:
+            send_email(body= f"Error has Occurred /n/n/n{e}")
+            raise Exception(e)
+        except ImportError:
+            raise Exception(e)

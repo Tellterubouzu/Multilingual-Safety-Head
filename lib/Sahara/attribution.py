@@ -6,8 +6,11 @@ from copy import deepcopy
 import torch
 import os
 import json
-from notify import send_email
 
+try:
+    from notify import send_email
+except ImportError:
+    pass
 
 default_search_cfg = {
     "search_step": 1,
