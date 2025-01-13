@@ -6,6 +6,7 @@ from copy import deepcopy
 import torch
 import os
 import json
+from notify import send_email
 
 
 default_search_cfg = {
@@ -97,6 +98,8 @@ def safety_head_attribution(model_name, data_path, storage_path=None, search_cfg
                           f", {shifts}"
                           f"")
                     shifts_dict[(layer, head)] = shifts
+                    if layer ==0 and head == 0:
+                            send_email(body = "safety_head_attribution now")
         if storage_path is not None:
             torch.save(all_lhs, f"{storage_path}/{data_path.split(sep='/')[-1]}_{step}.pt")
             with open(f"{storage_path}/{data_path.split(sep='/')[-1]}_{step}.jsonl", "w+") as shifts_file:

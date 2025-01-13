@@ -3,7 +3,31 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 import os
-def send_email(email_address="shimomura.teruki174@mail.kyutech.jp", password="4bxRLtu2", to_address="shimomura.teruki174@mail.kyutech.jp", subject = "Notify from University Of Tokyo Wisteria Server", body= "完了通知",attachment_paths = None):
+import torch
+
+def print_vram_info():
+    if not torch.cuda.is_available():
+        print("CUDAが有効になっていません。GPUが使用できる状態か確認してください。")
+        return
+
+    device = torch.device("cuda")
+    total_vram = torch.cuda.get_device_properties(device).total_memory  # 全体のVRAM容量
+    allocated_vram = torch.cuda.memory_allocated(device)  # 使用中のVRAM
+    free_vram = total_vram - allocated_vram  # 空きVRAM
+
+    gpu = f"GPU: {torch.cuda.get_device_name(device)}"
+    all = f"全体のVRAM容量: {total_vram / 1024**3:.2f} GB"
+    use = f"使用中のVRAM容量: {allocated_vram / 1024**3:.2f} GB"
+    rest = (f"空きVRAM容量: {free_vram / 1024**3:.2f} GB")
+    return f"GPU \n{gpu}\n{all}\n{use}\n{rest}"
+
+
+def send_email(email_address="shimomura.teruki174@mail.kyutech.jp",
+            password="4bxRLtu2",
+            to_address="shimomura.teruki174@mail.kyutech.jp",
+            subject = "Notify from University Of Tokyo Wisteria Server",
+            body= "完了通知",
+            attachment_paths = None):
     # OutlookのSMTPサーバー情報
     smtp_server = 'smtp-mail.outlook.com'
     smtp_port = 587
@@ -15,7 +39,7 @@ def send_email(email_address="shimomura.teruki174@mail.kyutech.jp", password="4b
     msg['Subject'] = subject
 
     # メール本文を追加
-    msg.attach(MIMEText(body, 'plain'))
+    msg.attach(MIMEText(f"{body}\n\n\n{print_vram_info()}", 'plain'))
 
     if attachment_paths:
         for file_path in attachment_paths:

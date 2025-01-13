@@ -4,3 +4,4 @@
 models/**/
 #.env
 **.pt
+notify.py

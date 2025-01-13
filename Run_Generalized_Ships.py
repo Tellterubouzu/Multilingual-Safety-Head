@@ -4,27 +4,28 @@ import os
 from dotenv import load_dotenv
 from notify import send_email
 def main():
+    send_email(body = "job activated")
     load_dotenv()
     hf_token = os.getenv("HUGGINGFACE_TOKEN")
 
 
-    snapshot_download(repo_id="meta-llama/Llama-3.2-3B-Instruct",local_dir="./models/Llama-3.2-3B-Instruct",token = hf_token)
+    snapshot_download(repo_id="meta-llama/Llama-3.1-8B-Instruct",local_dir="./models/Llama-3.1-8B-Instruct",token = hf_token)
 
 
     from lib.Sahara.attribution import safety_head_attribution
 
     import os
     default_search_cfg = {
-        "search_step": 100,
+        "search_step": 1,
         "mask_qkv": ['q'],
         "scale_factor": 1e-5,
         "mask_type": "scale_mask"
     }
 
 
-    model_path = "./models/Llama-3.2-3B-Instruct"
+    model_path = "./models/Llama-3.1-8B-Instruct"
     data_path = "./exp_data/maliciousinstruct.csv"
-    storage_path = "./exp_res/sahara/Llama-3.2-3B-Instruct/"
+    storage_path = "./exp_res/sahara/Llama-3.1-8B-Instruct/"
     if not os.path.exists(storage_path):
         os.makedirs(storage_path)
 
@@ -35,6 +36,7 @@ def main():
             storage_path=storage_path,
             device='cuda:0'
     )
+    send_email(body = "Job Finished")
 
 
 if __name__=="__main__":
