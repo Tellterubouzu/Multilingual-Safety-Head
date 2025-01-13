@@ -7,7 +7,7 @@ load_dotenv()
 hf_token = os.getenv("HUGGINGFACE_TOKEN")
 
 
-#snapshot_download(repo_id="meta-llama/Llama-2-7b-chat-hf",local_dir="./Llama-2-7b-Chat",token = hf_token)
+snapshot_download(repo_id="meta-llama/Llama-3.2-3B-Instruct",local_dir="./models/Llama-3.2-3B-Instruct",token = hf_token)
 
 
 from lib.Sahara.attribution import safety_head_attribution
