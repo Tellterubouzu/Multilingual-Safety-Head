@@ -28,6 +28,7 @@ def main():
     hf_token = os.getenv("HUGGINGFACE_TOKEN")
 
 
+    snapshot_download(repo_id="meta-llama/Llama-3.2-3B-Instruct",local_dir="./models/Llama-3.2-3B-Instruct",token = hf_token)
     snapshot_download(repo_id="meta-llama/Llama-3.1-8B-Instruct",local_dir="./models/Llama-3.1-8B-Instruct",token = hf_token)
 
 
@@ -41,20 +42,35 @@ def main():
         "mask_type": "scale_mask"
     }
 
-
-    model_path = "./models/Llama-3.1-8B-Instruct"
-    data_path = "./exp_data/maliciousinstruct.csv"
-    storage_path = "./exp_res/sahara/Llama-3.1-8B-Instruct/"
+    model_list = ["./models/Llama-3.2-3B-Instruct",
+                    #"./models/Llama-3.1-8B-Instruct"
+                    #"./models/Llama-3.2-11B-Instruct"
+                   ]
+    dataset_list = [
+        "./dataset_for_sahara/Multilingual_de_300.csv"
+        "./dataset_for_sahara/Multilingual_en_300.csv"
+        "./dataset_for_sahara/Multilingual_hi_300.csv"
+        "./dataset_for_sahara/Multilingual_ja_300.csv"
+    ]
+    
+    model_path = "./models/Llama-3.2-3B-Instruct"
+    storage_path = "./Result/"
     if not os.path.exists(storage_path):
         os.makedirs(storage_path)
 
-    safety_head_attribution(
-            model_name=model_path,
-            data_path=data_path,
-            search_cfg=default_search_cfg,
-            storage_path=storage_path,
-            device='cuda:0'
-    )
+    for model in model_list:
+        model_name = model.split('/')[-1]
+        storage_path = os.path.join("./Result",model_name)
+        if not os.path.exists(storage_path):
+            os.makedirs(storage_path)
+        for data in dataset_list:
+            safety_head_attribution(
+                    model_name=model_path,
+                    data_path=data,
+                    search_cfg=default_search_cfg,
+                    storage_path=storage_path,
+                    device='cuda:0'
+            )
     
 
 
