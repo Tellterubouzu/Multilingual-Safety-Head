@@ -4,8 +4,9 @@
 ```
 models/ <-llama等のモデルの格納場所
 ```
+[Todo List](Todo.md)
 
-## 実験設定,Todo
+## 実験設定
 - Generalized Shipsの方
 - 各言語ごとにオーダー100件
 - Figure4.5の関係は？
