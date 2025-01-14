@@ -1,6 +1,5 @@
 import torch
 from lib.utils.custommodel import CustomLlamaModelForCausalLM
-from transformers import AutoTokenizer, BitsAndBytesConfig
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM,BitsAndBytesConfig
 

@@ -7,7 +7,7 @@
 #PJM -L node=1
 #PJM --at 202501140015
 
-mkdir ./miniconda3/ && cd ~/miniconda3/
+mkdir ./miniconda3/ && cd ./miniconda3/
 wget https://repo.anaconda.com/miniconda/Miniconda3-py310_23.10.0-1-Linux-x86_64.sh && bash Miniconda3-py310_23.10.0-1-Linux-x86_64.sh -b -u -p ~/miniconda3/
 source ./miniconda3/etc/profile.d/conda.sh
 which conda && echo "====" && conda --version
