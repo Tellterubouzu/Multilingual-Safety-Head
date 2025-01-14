@@ -13,6 +13,8 @@ def normalize_columns(u):
 
 
 def compute_subspace_similarity(matrix1, matrix2):
+    matrix1 = matrix1.to(dtype=torch.float32)
+    matrix2 = matrix2.to(dtype=torch.float32)
     u1, _, v1 = torch.linalg.svd(matrix1, full_matrices=False)
     u2, _, v2 = torch.linalg.svd(matrix2, full_matrices=False)
     S = torch.matmul(u1[:, :1].T, u2[:, :1])
@@ -23,6 +25,8 @@ def compute_subspace_similarity(matrix1, matrix2):
 
 
 def compute_subspace_spectral_norm(u1, u2):
+    u1 = u1.to(dtype=torch.float32)
+    u2 = u2.to(dtype=torch.float32)
     u1_normalized = normalize_columns(u1)
     u2_normalized = normalize_columns(u2)
     S = torch.matmul(u1_normalized[:, :1].T, u2_normalized[:, :1])
