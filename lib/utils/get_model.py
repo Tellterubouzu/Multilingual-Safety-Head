@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 from datasets import load_dataset
 from transformers import DataCollatorWithPadding
 from lib.utils.load_conv import load_conv
+import torch
 
 
 def get_dataloader(data_path, model_name, tokenizer, accelerator, **inference_cfg):
@@ -38,10 +39,10 @@ def get_model(model_name, accelerator=None, add_size=False, get_custom=False):
                 )
             elif "Llama" in model_name or "vicuna" in model_name:
                 model = CustomLlamaModelForCausalLM.from_pretrained(
-                    model_name, device_map='auto')
+                    model_name, device_map='auto',torch_dtype=torch.bfloat16)
             elif "Mistral" in model_name:
                 model = CustomMistralModelForCausalLM.from_pretrained(
-                    model_name, device_map='auto')
+                    model_name, device_map='auto',torch_dtype=torch.bfloat16)
             else:
                 raise ValueError("")
             if add_size:
@@ -54,10 +55,10 @@ def get_model(model_name, accelerator=None, add_size=False, get_custom=False):
             )
         elif "Llama" in model_name or "vicuna" in model_name:
             model = CustomLlamaModelForCausalLM.from_pretrained(
-                model_name)
+                model_name,torch_dtype=torch.bfloat16)
         elif "Mistral" in model_name:
             model = CustomMistralModelForCausalLM.from_pretrained(
-                model_name)
+                model_name,torch_dtype=torch.bfloat16)
         else:
             raise ValueError("")
         if add_size:

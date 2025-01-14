@@ -18,7 +18,7 @@ def print_vram_info():
     all = f"全体のVRAM容量: {total_vram / 1024**3:.2f} GB"
     use = f"使用中のVRAM容量: {allocated_vram / 1024**3:.2f} GB"
     rest = (f"空きVRAM容量: {free_vram / 1024**3:.2f} GB")
-    return f"GPU \n{gpu}\n{all}\n{use}\n{rest}"
+    print(f"GPU \n{gpu}\n{all}\n{use}\n{rest}")
 
 
 
@@ -76,7 +76,4 @@ def main():
 
 
 if __name__=="__main__":
-    try:
-        main()
-    except Exception as e:
-        raise Exception(e)
+    main()
