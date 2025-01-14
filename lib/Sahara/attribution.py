@@ -7,7 +7,7 @@ import torch
 import os
 import json
 
-
+# デフォルトの検索設定
 default_search_cfg = {
     "search_step": 1,
     "mask_qkv": ['q'],
@@ -17,12 +17,28 @@ default_search_cfg = {
 
 
 def load_from_search_cfg(search_cfg):
+    """
+    指定された検索設定を基にマスク設定を生成
+    Args:
+        search_cfg (dict): 検索設定の辞書
+    Returns:
+        dict: マスク設定を含む辞書
+
+    """
     temp = deepcopy(search_cfg)
     _ = temp.pop('search_step')
     return temp
 
 
 def update_mask_cfg(mask_cfg, layer, head, temp=True):
+    """マスク設定を更新する
+    Args:
+    mask_cfg (dict): 現在のマスク設定
+    layer (int): 更新対象の層番号
+    head (int): 更新対象のヘッド番号
+    temp (bool): 一時的な更新かどうか
+    Returns:
+    dict: 更新されたマスク設定"""
     now_mask_key = (layer, head)
     new_mask_cfg = deepcopy(mask_cfg)
     if 'head_mask' not in new_mask_cfg:
@@ -32,6 +48,15 @@ def update_mask_cfg(mask_cfg, layer, head, temp=True):
 
 
 def get_last_hidden_states(model, tokenizer, data, mask_cfg=None):
+    """
+    モデルから最後の隠れ層状態を取得
+    Args:
+        model: 使用するモデル
+        tokenizer: トークナイザー
+        data (pd.DataFrame): 入力データ
+        mask_cfg (dict, optional): マスク設定
+    Returns:
+        torch.Tensor: 最後の隠れ層状態のテンソル"""
     with torch.no_grad():
         last_hidden_states = []
         head_mask = mask_cfg['head_mask'] if mask_cfg is not None else None
@@ -53,26 +78,44 @@ def get_last_hidden_states(model, tokenizer, data, mask_cfg=None):
 
 
 def get_safety_subspace_shifts(base_last_hidden_states, last_hidden_states):
+    """
+    基本状態と現在の状態の間のサブスペースシフトを計算
+    Args:
+        base_last_hidden_states (torch.Tensor): 基本状態の隠れ層テンソル
+        last_hidden_states (torch.Tensor): 現在の隠れ層テンソル
+    Returns:
+        float: サブスペースシフト"""
     shifts = compute_subspace_similarity(base_last_hidden_states, last_hidden_states)
     return shifts
 
 
 def get_most_important_subspace(shifts_dict):
+    """
+    最も重要なサブスペースを取得
+    Args:
+        shifts_dict (dict): サブスペースシフトの辞書
+    Returns:
+        tuple: 最も重要な層とヘッド番号"""
     sorted_dict = sorted(shifts_dict.items(), key=lambda x: x[1], reverse=True)
     return sorted_dict[0][0][0], sorted_dict[0][0][1]
 
 
 def safety_head_attribution(model_name, data_path, storage_path=None, search_cfg=None, device='cuda:0'):
+    """
+    セーフティヘッドの寄与を計算
+    Args:
+        model_name (str): モデルの名前またはパス
+        data_path (str): 入力データのパス
+        storage_path (str, optional): 結果を保存するパス
+        search_cfg (dict, optional): 検索設定
+        device (str, optional): デバイス（例: 'cuda:0'）"""
     tokenizer, _as = get_tokenizer(model_name)
     model, _acc = get_model(model_name, get_custom=True, add_size=False)
-    # model.to(device)
     model.model.to(device)
     model.lm_head.to(device)
     data = pd.read_csv(data_path)
     layer_nums = model.config.num_hidden_layers
     head_nums = model.config.num_attention_heads
-    # layer_nums = 4
-    # head_nums = 32
     search_step = search_cfg.get('search_step', 1)
     mask_cfg = load_from_search_cfg(search_cfg)
     base_lhs = get_last_hidden_states(model, tokenizer, data)
@@ -91,7 +134,6 @@ def safety_head_attribution(model_name, data_path, storage_path=None, search_cfg
                     last_hs = get_last_hidden_states(model, tokenizer, data, now_mask_cfg)
                     if all_lhs is not None:
                         all_lhs[(layer, head)] = last_hs.detach().cpu()
-                    # shifts = get_safety_subspace_shifts(base_lhs, last_hs)
                     shifts = compute_subspace_spectral_norm(base_lhs, last_hs)
                     print(f"{layer}, {head}"
                           f", {shifts}"

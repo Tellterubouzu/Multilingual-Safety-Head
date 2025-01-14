@@ -4,7 +4,7 @@
 ```
 models/ <-llama等のモデルの格納場所
 ```
-[Todo List](Todo.md)
+[Todo List](./ToDo.md)
 
 ## 実験設定
 - Generalized Shipsの方

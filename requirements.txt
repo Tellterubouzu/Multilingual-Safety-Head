@@ -8,3 +8,6 @@ tqdm==4.66.5
 transformers==4.44.2
 python-dotenv==1.0.1
 huggingface_hub
+tqdm
+
+
