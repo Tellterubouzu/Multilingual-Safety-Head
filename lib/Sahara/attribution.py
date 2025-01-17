@@ -99,6 +99,25 @@ def get_most_important_subspace(shifts_dict):
     sorted_dict = sorted(shifts_dict.items(), key=lambda x: x[1], reverse=True)
     return sorted_dict[0][0][0], sorted_dict[0][0][1]
 
+def save_top_heads(shifts_dict, top_n, output_path):
+    """
+    上位のヘッド情報を保存
+    Args:
+        shifts_dict (dict): ヘッドごとのシフトスコア辞書
+        top_n (int): 保存する上位ヘッドの数
+        output_path (str): 保存先のファイルパス
+    """
+    # スコアが高い順にソートして上位を取得
+    top_heads = sorted(shifts_dict.items(), key=lambda x: x[1], reverse=True)[:top_n]
+    
+    # 保存するデータを整形
+    top_heads_dict = {f"Layer {k[0][0]} - Head {k[0][1]}": v for k, v in top_heads}
+    
+    # JSON形式で保存
+    with open(output_path, "w") as f:
+        json.dump(top_heads_dict, f, indent=4)
+    print(f"Top {top_n} heads saved to {output_path}")
+
 
 def safety_head_attribution(model_name, data_path, storage_path=None, search_cfg=None, device='cuda:0'):
     """

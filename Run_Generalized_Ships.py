@@ -47,10 +47,10 @@ def main():
                     #"./models/Llama-3.2-11B-Instruct"
                    ]
     dataset_list = [
-        "./dataset_for_sahara/Multilingual_de_300.csv"
-        "./dataset_for_sahara/Multilingual_en_300.csv"
-        "./dataset_for_sahara/Multilingual_hi_300.csv"
-        "./dataset_for_sahara/Multilingual_ja_300.csv"
+        "./dataset_for_sahara/Multilingual_de_300.csv",
+        "./dataset_for_sahara/Multilingual_en_300.csv",
+        "./dataset_for_sahara/Multilingual_hi_300.csv",
+        "./dataset_for_sahara/Multilingual_ja_300.csv",
     ]
     
     model_path = "./models/Llama-3.2-3B-Instruct"
