@@ -1,4 +1,3 @@
-
 from huggingface_hub import snapshot_download
 import os
 from dotenv import load_dotenv
@@ -27,7 +26,6 @@ def main():
     load_dotenv()
     hf_token = os.getenv("HUGGINGFACE_TOKEN")
 
-
     snapshot_download(repo_id="meta-llama/Llama-3.2-3B-Instruct",local_dir="./models/Llama-3.2-3B-Instruct",token = hf_token)
     snapshot_download(repo_id="meta-llama/Llama-3.1-8B-Instruct",local_dir="./models/Llama-3.1-8B-Instruct",token = hf_token)
 
@@ -39,33 +37,32 @@ def main():
         "search_step": 1,
         "mask_qkv": ['q'],
         "scale_factor": 1e-5,
-        "mask_type": "scale_mask"
+        "mask_type": "mean_mask"
     }
 
     model_list = ["./models/Llama-3.2-3B-Instruct",
-                    #"./models/Llama-3.1-8B-Instruct"
+                    "./models/Llama-3.1-8B-Instruct"
                     #"./models/Llama-3.2-11B-Instruct"
                    ]
     dataset_list = [
-        "./dataset_for_sahara/Multilingual_de_300.csv"
-        "./dataset_for_sahara/Multilingual_en_300.csv"
-        "./dataset_for_sahara/Multilingual_hi_300.csv"
-        "./dataset_for_sahara/Multilingual_ja_300.csv"
+        "./dataset_for_sahara/Multilingual.csv",
+        "./dataset_for_sahara/Multilingual_de_300.csv",
+        "./dataset_for_sahara/Multilingual_en_300.csv",
+        "./dataset_for_sahara/Multilingual_hi_300.csv",
+        "./dataset_for_sahara/Multilingual_ja_300.csv",
     ]
     
-    model_path = "./models/Llama-3.2-3B-Instruct"
     storage_path = "./Result/"
     if not os.path.exists(storage_path):
         os.makedirs(storage_path)
-
-    for model in model_list:
-        model_name = model.split('/')[-1]
-        storage_path = os.path.join("./Result",model_name)
-        if not os.path.exists(storage_path):
-            os.makedirs(storage_path)
-        for data in dataset_list:
+    for data in dataset_list:
+        for model in model_list:
+            model_name = model.split('/')[-1]
+            storage_path = os.path.join("./Result",model_name)
+            if not os.path.exists(storage_path):
+                os.makedirs(storage_path)
             safety_head_attribution(
-                    model_name=model_path,
+                    model_name=model,
                     data_path=data,
                     search_cfg=default_search_cfg,
                     storage_path=storage_path,
