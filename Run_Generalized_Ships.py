@@ -42,13 +42,9 @@ def main():
 
     model_list = ["./models/Llama-3.2-3B-Instruct",
                     "./models/Llama-3.1-8B-Instruct"
-                    #"./models/Llama-3.2-11B-Instruct"
                    ]
     dataset_list = [
-<<<<<<< HEAD
         "./dataset_for_sahara/Multilingual.csv",
-=======
->>>>>>> f9d86215a622943e1ec7841dd63e707fd57108b3
         "./dataset_for_sahara/Multilingual_de_300.csv",
         "./dataset_for_sahara/Multilingual_en_300.csv",
         "./dataset_for_sahara/Multilingual_hi_300.csv",

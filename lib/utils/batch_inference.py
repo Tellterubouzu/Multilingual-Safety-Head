@@ -150,6 +150,7 @@ def surgery(model, tokenizer,
     if path:
         tokenizer.save_pretrained(path)
         model.save_pretrained(path)
+    del outputs
     return model
 
 
