@@ -82,51 +82,51 @@ class CustomLlama:
         config = {**self.default_generation_config, **(generation_config or {})}
         results = []
 
-        with tqdm(total=len(input_texts), desc="Predicting", unit="text") as pbar:
-            for i in range(0, len(input_texts), batch_size):
-                batch_inputs = input_texts[i:i + batch_size]
+        #with tqdm(total=len(input_texts), desc="Predicting", unit="text") as pbar:
+        for i in range(0, len(input_texts), batch_size):
+            batch_inputs = input_texts[i:i + batch_size]
 
-                batch_prompts =[]
-                for input_text in batch_inputs:
-                    local_chat = []
-                    local_chat.append({"role":"user","content":input_text})
-                    prompt = self.tokenizer.apply_chat_template(
-                        local_chat,
-                        tokenize = False,
-                        add_generation_prompt=True
-                    )
-                    batch_prompts.append(prompt)
+            batch_prompts =[]
+            for input_text in batch_inputs:
+                local_chat = []
+                local_chat.append({"role":"user","content":input_text})
+                prompt = self.tokenizer.apply_chat_template(
+                    local_chat,
+                    tokenize = False,
+                    add_generation_prompt=True
+                )
+                batch_prompts.append(prompt)
 
-                inputs = self.tokenizer(batch_prompts, return_tensors="pt", padding=True, truncation=True).to(self.device)
-                input_ids = inputs["input_ids"]
-                with torch.no_grad():
-                    outputs = self.model.generate(
-                        **inputs,
-                        do_sample=True,
-                        head_mask =head_mask,
-                        mask_type="mean_mask",
-                        scale_factor=1e-4,
-                        mask_para=False,
-                        head_dim=self.model.config.hidden_size//self.model.config.num_attention_heads,
-                        top_p=config["top_p"],
-                        temperature=config["temperature"],
-                        max_new_tokens=config["max_new_tokens"],
-                        eos_token_id=[
-                            self.tokenizer.eos_token_id,
-                            self.tokenizer.convert_tokens_to_ids("<|eot_id|>"),
-                        ],
-                        pad_token_id=self.tokenizer.eos_token_id,
-                    )
-                for idx, output_tokens in enumerate(outputs):
-                    input_length = (inputs['attention_mask'][idx] == 1).sum().item()
-                    input_length = input_ids.shape[1]
-                    generated_text = self.tokenizer.decode(
-                        output_tokens[input_length:],
-                        skip_special_tokens=True
-                    ).strip()
+            inputs = self.tokenizer(batch_prompts, return_tensors="pt", padding=True, truncation=True).to(self.device)
+            input_ids = inputs["input_ids"]
+            with torch.no_grad():
+                outputs = self.model.generate(
+                    **inputs,
+                    do_sample=True,
+                    head_mask =head_mask,
+                    mask_type="mean_mask",
+                    scale_factor=1e-4,
+                    mask_para=False,
+                    head_dim=self.model.config.hidden_size//self.model.config.num_attention_heads,
+                    top_p=config["top_p"],
+                    temperature=config["temperature"],
+                    max_new_tokens=config["max_new_tokens"],
+                    eos_token_id=[
+                        self.tokenizer.eos_token_id,
+                        self.tokenizer.convert_tokens_to_ids("<|eot_id|>"),
+                    ],
+                    pad_token_id=self.tokenizer.eos_token_id,
+                )
+            for idx, output_tokens in enumerate(outputs):
+                input_length = (inputs['attention_mask'][idx] == 1).sum().item()
+                input_length = input_ids.shape[1]
+                generated_text = self.tokenizer.decode(
+                    output_tokens[input_length:],
+                    skip_special_tokens=True
+                ).strip()
 
-                    results.append(generated_text)
-                pbar.update(len(batch_inputs))
+                results.append(generated_text)
+                # pbar.update(len(batch_inputs))
 
         return results
 
@@ -244,10 +244,7 @@ def safety_head_attribution_by_asr(base_model_path,data_path,reject_sentence_pat
     model = CustomLlama(model_path = base_model_path,generation_config=generation_kwargs)
     for layer in tqdm(range(0,layer_nums)):
         for head in range(0,head_nums):
-            temp_dir = f"./L{layer}"
-
-            if not os.path.exists(temp_dir):
-                os.makedirs(temp_dir)
+            temp_dir = f"L{layer}"
             head_mask = tuning_entity(layer,head)
             print(f"[Compute] Compute ASR without [L{layer},H{head}]")
             asr,outputs = compute_asr_with_llama(
