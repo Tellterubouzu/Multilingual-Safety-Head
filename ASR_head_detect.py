@@ -157,8 +157,7 @@ default_search_cfg = {
 def tuning_entity(layer:int, head:int):
     formatted  = {}
     formatted[(layer,head)] = ['q','k','v']
-    text = f"L{layer}_H{head}"
-    return formatted, text
+    return formatted
 
 def load_reject_phrases(file_path):
     if not os.path.exists(file_path):
@@ -212,7 +211,7 @@ def plot_layer_head_heatmap(file_path,base_model_name,lang):
     plt.xlabel("Layer Number")
     plt.ylabel("Head Number")
     plt.title(f"Layer-Head ASR Heatmap of {base_model_name}")
-    plt.savefig(f"Layer-Head ASR Heatmap of {base_model_name},lang = {lang}")
+    plt.savefig(f"Layer-Head ASR Heatmap of {base_model_name},lang = {lang}.png")
 
 
 def safety_head_attribution_by_asr(base_model_path,data_path,reject_sentence_path,lang:str,storage_path =None,device='cuda:0',batch_size=20,debug = True):
