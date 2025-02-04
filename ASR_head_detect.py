@@ -1,4 +1,3 @@
-
 import os
 from transformers import AutoTokenizer,AutoModelForCausalLM,BitsAndBytesConfig
 import torch
@@ -104,8 +103,8 @@ class CustomLlama:
                     **inputs,
                     do_sample=True,
                     head_mask =head_mask,
-                    mask_type="mean_mask",
-                    scale_factor=1e-4,
+                    mask_type="scale_mask",
+                    scale_factor=1e-5,
                     mask_para=False,
                     head_dim=self.model.config.hidden_size//self.model.config.num_attention_heads,
                     top_p=config["top_p"],
@@ -126,7 +125,7 @@ class CustomLlama:
                 ).strip()
 
                 results.append(generated_text)
-                # pbar.update(len(batch_inputs))
+                #pbar.update(len(batch_inputs))
 
         return results
 
@@ -156,7 +155,8 @@ default_search_cfg = {
 
 def tuning_entity(layer:int, head:int):
     formatted  = {}
-    formatted[(layer,head)] = ['q','k','v']
+    # formatted[(layer,head)] = ['q','k','v']
+    formatted[(layer,head)] = ['v']
     return formatted
 
 def load_reject_phrases(file_path):
@@ -205,6 +205,7 @@ def plot_layer_head_heatmap(file_path,base_model_name,lang):
         score_matrix, 
         annot=False, 
         cmap="Blues", 
+        vmin=0,vmax=1,
         xticklabels=[f"{i}" for i in range(max_layer + 1)],
         yticklabels=[f"{i}" for i in range(max_head, -1, -1)]
     )
@@ -232,6 +233,8 @@ def safety_head_attribution_by_asr(base_model_path,data_path,reject_sentence_pat
     model = CustomLlamaModelForCausalLM.from_pretrained(base_model_path)
     layer_nums = model.config.num_hidden_layers
     head_nums = model.config.num_attention_heads
+    real_head_nums = model.model.layers[0].self_attn.num_heads
+    print(real_head_nums)
     del model
     torch.cuda.empty_cache()
     generation_kwargs = {
@@ -276,39 +279,39 @@ def safety_head_attribution_by_asr(base_model_path,data_path,reject_sentence_pat
             
 
 
-
 def main():
     print_vram_info()
     import os
     safety_head_attribution_by_asr(
-        data_path="./dataset_for_sahara/Multilingual_ja_600.csv",
-        reject_sentence_path="./ASR_layer_detect/reject_keywords_ja_.txt",
-        base_model_path="./models/Llama-3.1-8B-Instruct",
-        batch_size=60,
-        lang="ja"
-    )
-    safety_head_attribution_by_asr(
-        data_path="./dataset_for_sahara/Multilingual_en_600.csv",
+        data_path="./dataset_for_sahara/Llama-3.1-8B-Instruct_en_safe.csv",
         reject_sentence_path="./ASR_layer_detect/reject_keywords_en_.txt",
         base_model_path="./models/Llama-3.1-8B-Instruct",
         batch_size=60,
         lang="en"
     )
     safety_head_attribution_by_asr(
-        data_path="./dataset_for_sahara/Multilingual_ja_600.csv",
+        data_path="./dataset_for_sahara/Llama-3.1-8B-Instruct_ja_safe.csv",
         reject_sentence_path="./ASR_layer_detect/reject_keywords_ja_.txt",
-        base_model_path="./models/Llama-3.2-3B-Instruct",
+        base_model_path="./models/Llama-3.1-8B-Instruct",
         batch_size=60,
         lang="ja"
     )
     safety_head_attribution_by_asr(
-        data_path="./dataset_for_sahara/Multilingual_en_600.csv",
+        data_path="./dataset_for_sahara/Llama-3.2-3B-Instruct_en_safe.csv",
         reject_sentence_path="./ASR_layer_detect/reject_keywords_en_.txt",
         base_model_path="./models/Llama-3.2-3B-Instruct",
         batch_size=60,
         lang="en"
     )
-    
+    safety_head_attribution_by_asr(
+        data_path="./dataset_for_sahara/Llama-3.2-3B-Instruct_ja_safe.csv",
+        reject_sentence_path="./ASR_layer_detect/reject_keywords_ja_.txt",
+        base_model_path="./models/Llama-3.2-3B-Instruct",
+        batch_size=60,
+        lang="ja"
+    )
+
+
 
 
 
