@@ -39,7 +39,7 @@ def compute_asr_with_metal(model, prompts, reject_phrases, batch_size=4, generat
     asr = ( 1-(reject_count / total)) if total> 0 else 0.0
     return asr, outputs
 
-def ASR_calculate(dataset_path, reject_sentence_path, base_model_path):
+def ASR_calculate(dataset_path, reject_sentence_path, base_model_path,prefix=None):
     """
     CSVファイル (dataset_path) の 'input' 列をバッチ推論し，reject_sentence_path の拒否キーワードが
     出力に含まれていればrejectと判定．レイヤーごとに削除 → ASRを計算 → グラフ化
@@ -62,8 +62,8 @@ def ASR_calculate(dataset_path, reject_sentence_path, base_model_path):
     total_layers = len(base_model.model.layers)
     del base_model
     torch.cuda.empty_cache()
-
-    remove_indices_list = [[layer_idx] for layer_idx in range(total_layers-1)]
+    # remove_indices_list = [[layer_idx] for layer_idx in range(total_layers-1)]
+    remove_indices_list = [[layer_idx] for layer_idx in range(total_layers)]
     generate_kwargs = {
         "max_new_tokens": 256,
         "temperature": 0.7,
@@ -73,7 +73,7 @@ def ASR_calculate(dataset_path, reject_sentence_path, base_model_path):
     results = {}
     model_name = base_model_path.split('/')[-1]
     lang = reject_sentence_path.split('_')[-2]
-    result_dir = f"./{model_name}_{lang}"
+    result_dir = f"./{model_name}_{lang}_{prefix}"
     os.makedirs(result_dir,exist_ok=True)
     # ==== 4) レイヤーを一つずつ削除 → ASRを計算 ====
     for remove_list in remove_indices_list:
@@ -125,8 +125,7 @@ def ASR_calculate(dataset_path, reject_sentence_path, base_model_path):
 
     plt.title(f"ASR by Removed Layer Indices {model_name} {lang}")
     plt.tight_layout()
-    plt.savefig(f"asr_by_layer_removal_{model_name}_{lang}.png")
-    plt.show()
+    plt.savefig(f"asr_by_layer_removal_{model_name}_{lang}_{prefix}.png")
 
     print("\n=== Summary of Results ===")
     
@@ -136,26 +135,30 @@ def ASR_calculate(dataset_path, reject_sentence_path, base_model_path):
         print(f"Removed {k} => ASR: {v:.4f}")
 
 def main():
-    # ASR_calculate(
-    #     dataset_path="./attack_dataset/adv_bench_en.csv",
-    #     reject_sentence_path="./reject_keywords_en_.txt",
-    #     base_model_path="../models/Llama-2-7b-chat-hf"
-    # )
+    ASR_calculate(
+        dataset_path="../dataset_for_sahara/Multilingual_ja_300.csv",
+        reject_sentence_path="./reject_keywords_ja_.txt",
+        base_model_path="../models/Llama-2-7b-chat-hf",
+        prefix = "multilingual_final"
+    )
+    ASR_calculate(
+        dataset_path="../dataset_for_sahara/Multilingual_en_300.csv",
+        reject_sentence_path="./reject_keywords_en_.txt",
+        base_model_path="../models/Llama-2-7b-chat-hf",
+        prefix = "multilingual_final"
+    )
+    ASR_calculate(
+        dataset_path="./attack_dataset/adv_bench_en.csv",
+        reject_sentence_path="./reject_keywords_en_.txt",
+        base_model_path="../models/Llama-2-7b-chat-hf",
+        prefix = "adv_bench_final"
+    )
     ASR_calculate(
         dataset_path="./attack_dataset/adv_bench_ja.csv",
         reject_sentence_path="./reject_keywords_ja_.txt",
-        base_model_path="../models/Llama-2-7b-chat-hf"
+        base_model_path="../models/Llama-2-7b-chat-hf",
+        prefix = "adv_bench_final"
     )
-    # ASR_calculate(
-    #     dataset_path="../dataset_for_sahara/Multilingual_ja_600.csv",
-    #     reject_sentence_path="./reject_keywords_ja_.txt",
-    #     base_model_path="../models/Llama-3.1-8B-Instruct"
-    # )
-    # ASR_calculate(
-    #     dataset_path="../dataset_for_sahara/Multilingual_en_600.csv",
-    #     reject_sentence_path="./reject_keywords_en_.txt",
-    #     base_model_path="../models/Llama-3.1-8B-Instruct"
-    # )
     # ASR_calculate(
     #     dataset_path="../dataset_for_sahara/Multilingual_ja_600.csv",
     #     reject_sentence_path="./reject_keywords_ja_.txt",
