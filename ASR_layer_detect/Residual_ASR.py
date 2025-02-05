@@ -23,31 +23,13 @@ def load_reject_phrases(file_path: str) -> List[str]:
         phrases = [line.strip() for line in f if line.strip()]
     return phrases
 
-def remove_layers_from_llama(base_model: AutoModelForCausalLM, remove_layer_indices: list):
-    """
-    既にロード済みの base_model (LlamaForCausalLM) から
-    指定したレイヤー (remove_layer_indices) を削除した新しいモデルを返す．
-    """
-    
-    model_copy = copy.deepcopy(base_model)
-    original_layers = model_copy.model.layers
-
-    remain_layers = torch.nn.ModuleList(
-        layer for i, layer in enumerate(original_layers)
-        if i not in remove_layer_indices
-    )
-    
-    model_copy.model.layers = remain_layers
-    model_copy.config.num_hidden_layers = len(remain_layers)
-    return model_copy
-
-def compute_asr_with_metal(metal, prompts, reject_phrases, batch_size=4, generation_config=None):
+def compute_asr_with_metal(model, prompts, reject_phrases, batch_size=4, generation_config=None):
     """
     MetaLlama3インスタンスを使ってバッチ推論し，ASRを計算する関数．
     生成結果に reject_phrases のいずれかが含まれたら "reject" としてカウント．
     Attach Success Rateを返す
     """
-    outputs = metal.predict_batch(prompts, generation_config=generation_config, batch_size=batch_size)
+    outputs = model.predict_batch(prompts, generation_config=generation_config, batch_size=batch_size)
     reject_count = 0
     for text in outputs:
         # 拒否フレーズのどれかが含まれていたらreject
@@ -57,17 +39,17 @@ def compute_asr_with_metal(metal, prompts, reject_phrases, batch_size=4, generat
     asr = ( 1-(reject_count / total)) if total> 0 else 0.0
     return asr, outputs
 
-def ASR_layer_abration(dataset_path, reject_sentence_path, base_model_path):
+def ASR_calculate(dataset_path, reject_sentence_path, base_model_path):
     """
     CSVファイル (dataset_path) の 'input' 列をバッチ推論し，reject_sentence_path の拒否キーワードが
     出力に含まれていればrejectと判定．レイヤーごとに削除 → ASRを計算 → グラフ化
     推論には MetaLlama3 クラスを用いる．
     """
-
     # ==== 1) CSVファイルからプロンプトのリストを取得 ====
     df = pd.read_csv(dataset_path)  # 必要に応じてencoding指定
     prompts = df["input"].tolist()  # "input"列からリスト化
-    prompts = prompts[:100]
+    prompts = prompts[:300]
+
     # ==== 2) reject_sentence.txt から拒否フレーズをロード ====
     reject_phrases = load_reject_phrases(reject_sentence_path)
     print("Reject phrases:", reject_phrases)
@@ -75,51 +57,34 @@ def ASR_layer_abration(dataset_path, reject_sentence_path, base_model_path):
     # ==== 3) ベースモデル（Llama）をロード ====
     print("[INFO] Loading base LlamaForCausalLM...")
     base_model = AutoModelForCausalLM.from_pretrained(base_model_path) 
-    # tokenizerはここではレイヤー削除用には特に不要だが、一応読み込む
-    _ = AutoTokenizer.from_pretrained(base_model_path)
 
     # レイヤー数
     total_layers = len(base_model.model.layers)
+    del base_model
+    torch.cuda.empty_cache()
 
-    # ==== 4) レイヤーを一つずつ削除 → ASRを計算 ====
-    remove_indices_list = [[layer_idx] for layer_idx in range(total_layers)]
+    remove_indices_list = [[layer_idx] for layer_idx in range(total_layers-1)]
     generate_kwargs = {
         "max_new_tokens": 256,
-        "temperature": 0.9,
+        "temperature": 0.7,
         "do_sample": True
     }
 
     results = {}
     model_name = base_model_path.split('/')[-1]
     lang = reject_sentence_path.split('_')[-2]
-    result_dir = f"./{model_name}_{lang}_layer_abr"
+    result_dir = f"./{model_name}_{lang}"
     os.makedirs(result_dir,exist_ok=True)
-
+    # ==== 4) レイヤーを一つずつ削除 → ASRを計算 ====
     for remove_list in remove_indices_list:
         print("\n===============================")
         print(f"[START] Remove layer indices = {remove_list}")
-
-        # 4.1 レイヤー削除したモデルを作成
-        modified_model = remove_layers_from_llama(base_model, remove_list)
-
-        # 4.2 一時ディレクトリに保存
-        temp_dir = f"./tmp_model_removed_{remove_list}"
-        if not os.path.exists(temp_dir):
-            os.mkdir(temp_dir)
-        print(f"[SAVE] Model{temp_dir}")
-        modified_model.save_pretrained(temp_dir)
-        # トークナイザーも保存
-        tokenizer = AutoTokenizer.from_pretrained(base_model_path)
-        tokenizer.save_pretrained(temp_dir)
-
-        print(f"[SAVED] Model{temp_dir}")
-
+        
         # 4.3 MetaLlama3でロードし，バッチ推論 → ASR計算
-        #     MetaLlama3のコンストラクタに渡すモデルパスは、上記でsave_pretrainedしたフォルダ
-        metal = MetaLlama3(model_path=temp_dir)
+        metal = MetaLlama3(model_path=base_model_path,abration_layer_list=remove_list)
         print(f"[COMPUTE] Compute ASR")
         asr,outputs = compute_asr_with_metal(
-            metal=metal,
+            model=metal,
             prompts=prompts,
             reject_phrases=reject_phrases,
             batch_size=50,
@@ -129,26 +94,23 @@ def ASR_layer_abration(dataset_path, reject_sentence_path, base_model_path):
         print(f"[RESULT] Remove {remove_list} => ASR = {asr:.4f}")
         results[str(remove_list)] = asr
         
-        out_dir = os.path.join(result_dir)
-        os.makedirs(out_dir,exist_ok=True)
+        os.makedirs(result_dir,exist_ok=True)
         
         gen_df = pd.DataFrame({
             "index" : range(len(prompts)),
             "prompt": prompts,
             "generated_text":outputs
         })
-        gen_df.to_csv(os.path.join(out_dir,"generated.csv"),index=False)
+        gen_df.to_csv(os.path.join(result_dir,f"generated_removed{str(remove_list)}.csv"),index=False)
         
         
-        print(f"[SAVED] Generated to {out_dir}")
+        print(f"[SAVED] Generated to generated_removed{str(remove_list)}.csv")
 
         # メモリ解放
-        del modified_model
         del metal
         torch.cuda.empty_cache()
 
-        shutil.rmtree(temp_dir,ignore_errors=True)
-        print(f"[CLEANUP] Removed temp_dir: {temp_dir}")
+        print(f"[CLEANUP] Cuda Cache")
 
     # ==== 5) 可視化（例：棒グラフ） ====
     x = list(results.keys())
@@ -163,25 +125,47 @@ def ASR_layer_abration(dataset_path, reject_sentence_path, base_model_path):
 
     plt.title(f"ASR by Removed Layer Indices {model_name} {lang}")
     plt.tight_layout()
-    plt.savefig(f"asr_by_layer_remove_{model_name}_{lang}.png")
+    plt.savefig(f"asr_by_layer_removal_{model_name}_{lang}.png")
     plt.show()
 
     print("\n=== Summary of Results ===")
+    
+    results_df = pd.DataFrame(list(results.items()), columns=["Removed Layers", "ASR"])
+    results_df.to_csv(os.path.join(result_dir, f"./asr_results{model_name}_lang{lang}.csv"), index=False)
     for k, v in results.items():
         print(f"Removed {k} => ASR: {v:.4f}")
 
-
 def main():
-    ASR_layer_abration(
-        dataset_path="./attack_dataset/adv_bench_en.csv",
-        reject_sentence_path="./reject_keywords_en_.txt",
-        base_model_path="../models/Llama-2-7b-chat-hf"
-    )
-    ASR_layer_abration(
+    # ASR_calculate(
+    #     dataset_path="./attack_dataset/adv_bench_en.csv",
+    #     reject_sentence_path="./reject_keywords_en_.txt",
+    #     base_model_path="../models/Llama-2-7b-chat-hf"
+    # )
+    ASR_calculate(
         dataset_path="./attack_dataset/adv_bench_ja.csv",
         reject_sentence_path="./reject_keywords_ja_.txt",
         base_model_path="../models/Llama-2-7b-chat-hf"
     )
+    # ASR_calculate(
+    #     dataset_path="../dataset_for_sahara/Multilingual_ja_600.csv",
+    #     reject_sentence_path="./reject_keywords_ja_.txt",
+    #     base_model_path="../models/Llama-3.1-8B-Instruct"
+    # )
+    # ASR_calculate(
+    #     dataset_path="../dataset_for_sahara/Multilingual_en_600.csv",
+    #     reject_sentence_path="./reject_keywords_en_.txt",
+    #     base_model_path="../models/Llama-3.1-8B-Instruct"
+    # )
+    # ASR_calculate(
+    #     dataset_path="../dataset_for_sahara/Multilingual_ja_600.csv",
+    #     reject_sentence_path="./reject_keywords_ja_.txt",
+    #     base_model_path="../models/Llama-3.2-3B-Instruct"
+    # )
+    # ASR_calculate(
+    #     dataset_path="../dataset_for_sahara/Multilingual_en_600.csv",
+    #     reject_sentence_path="./reject_keywords_en_.txt",
+    #     base_model_path="../models/Llama-3.2-3B-Instruct"
+    # )
 
 if __name__ == "__main__":
     main()

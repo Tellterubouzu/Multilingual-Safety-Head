@@ -67,7 +67,7 @@ def ASR_layer_abration(dataset_path, reject_sentence_path, base_model_path):
     # ==== 1) CSVファイルからプロンプトのリストを取得 ====
     df = pd.read_csv(dataset_path)  # 必要に応じてencoding指定
     prompts = df["input"].tolist()  # "input"列からリスト化
-    prompts = prompts[:100]
+
     # ==== 2) reject_sentence.txt から拒否フレーズをロード ====
     reject_phrases = load_reject_phrases(reject_sentence_path)
     print("Reject phrases:", reject_phrases)
@@ -92,7 +92,7 @@ def ASR_layer_abration(dataset_path, reject_sentence_path, base_model_path):
     results = {}
     model_name = base_model_path.split('/')[-1]
     lang = reject_sentence_path.split('_')[-2]
-    result_dir = f"./{model_name}_{lang}_layer_abr"
+    result_dir = f"./{model_name}_{lang}"
     os.makedirs(result_dir,exist_ok=True)
 
     for remove_list in remove_indices_list:
@@ -122,14 +122,14 @@ def ASR_layer_abration(dataset_path, reject_sentence_path, base_model_path):
             metal=metal,
             prompts=prompts,
             reject_phrases=reject_phrases,
-            batch_size=50,
+            batch_size=10,
             generation_config=generate_kwargs
         )
 
         print(f"[RESULT] Remove {remove_list} => ASR = {asr:.4f}")
         results[str(remove_list)] = asr
         
-        out_dir = os.path.join(result_dir)
+        out_dir = os.path.join(result_dir,temp_dir)
         os.makedirs(out_dir,exist_ok=True)
         
         gen_df = pd.DataFrame({
@@ -163,25 +163,23 @@ def ASR_layer_abration(dataset_path, reject_sentence_path, base_model_path):
 
     plt.title(f"ASR by Removed Layer Indices {model_name} {lang}")
     plt.tight_layout()
-    plt.savefig(f"asr_by_layer_remove_{model_name}_{lang}.png")
+    plt.savefig(f"asr_by_layer_removal_{model_name}_{lang}.png")
     plt.show()
 
     print("\n=== Summary of Results ===")
     for k, v in results.items():
         print(f"Removed {k} => ASR: {v:.4f}")
 
-
 def main():
-    ASR_layer_abration(
+    ASR_base(
         dataset_path="./attack_dataset/adv_bench_en.csv",
         reject_sentence_path="./reject_keywords_en_.txt",
         base_model_path="../models/Llama-2-7b-chat-hf"
     )
-    ASR_layer_abration(
+    ASR_base(
         dataset_path="./attack_dataset/adv_bench_ja.csv",
         reject_sentence_path="./reject_keywords_ja_.txt",
         base_model_path="../models/Llama-2-7b-chat-hf"
     )
-
 if __name__ == "__main__":
     main()

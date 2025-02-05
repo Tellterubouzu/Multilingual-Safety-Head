@@ -6,3 +6,4 @@ models/**/
 **.pt
 notify.py
 **.bash
+**/adv_bench_translator.ipynb
