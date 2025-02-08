@@ -215,7 +215,7 @@ def plot_layer_head_heatmap(file_path,base_model_name,lang):
     plt.savefig(f"Layer-Head ASR Heatmap of {base_model_name},lang = {lang}.png")
 
 
-def safety_head_attribution_by_asr(base_model_path,data_path,reject_sentence_path,lang:str,storage_path =None,device='cuda:0',batch_size=20,debug = True):
+def safety_head_attribution_by_asr(base_model_path,data_path,reject_sentence_path,lang:str,storage_path =None,device='cuda:0',batch_size=20,debug = False):
     
     df = pd.read_csv(data_path)
 
@@ -223,7 +223,7 @@ def safety_head_attribution_by_asr(base_model_path,data_path,reject_sentence_pat
     if debug:
         prompts = prompts[:60]
     base_model_name = base_model_path.split('/')[-1]
-    results_dir = f"./ASR_head_results/{base_model_name}"
+    results_dir = f"./ASR_head_results/{base_model_name}_{lang}"
     if not os.path.exists(results_dir):
         os.makedirs(results_dir)
     print(f"[Info] Evaluating {base_model_name}")
@@ -245,7 +245,7 @@ def safety_head_attribution_by_asr(base_model_path,data_path,reject_sentence_pat
     results = {}
 
     model = CustomLlama(model_path = base_model_path,generation_config=generation_kwargs)
-    for layer in tqdm(range(0,layer_nums)):
+    for layer in tqdm(range(0,3)):
         for head in range(0,head_nums):
             temp_dir = f"L{layer}"
             head_mask = tuning_entity(layer,head)
@@ -283,30 +283,23 @@ def main():
     print_vram_info()
     import os
     safety_head_attribution_by_asr(
-        data_path="./dataset_for_sahara/Llama-3.1-8B-Instruct_en_safe.csv",
+        data_path="./dataset_for_sahara/Multilingual_de_600.csv",
+        reject_sentence_path="./ASR_layer_detect/reject_keywords_de_.txt",
+        base_model_path="./models/Llama-3.1-8B-Instruct",
+        batch_size=40,
+        lang="de"
+    )
+    safety_head_attribution_by_asr(
+        data_path="./dataset_for_sahara/Multilingual_en_600.csv",
         reject_sentence_path="./ASR_layer_detect/reject_keywords_en_.txt",
         base_model_path="./models/Llama-3.1-8B-Instruct",
         batch_size=60,
         lang="en"
     )
     safety_head_attribution_by_asr(
-        data_path="./dataset_for_sahara/Llama-3.1-8B-Instruct_ja_safe.csv",
+        data_path="./dataset_for_sahara/Multilingual_ja_600.csv",
         reject_sentence_path="./ASR_layer_detect/reject_keywords_ja_.txt",
         base_model_path="./models/Llama-3.1-8B-Instruct",
-        batch_size=60,
-        lang="ja"
-    )
-    safety_head_attribution_by_asr(
-        data_path="./dataset_for_sahara/Llama-3.2-3B-Instruct_en_safe.csv",
-        reject_sentence_path="./ASR_layer_detect/reject_keywords_en_.txt",
-        base_model_path="./models/Llama-3.2-3B-Instruct",
-        batch_size=60,
-        lang="en"
-    )
-    safety_head_attribution_by_asr(
-        data_path="./dataset_for_sahara/Llama-3.2-3B-Instruct_ja_safe.csv",
-        reject_sentence_path="./ASR_layer_detect/reject_keywords_ja_.txt",
-        base_model_path="./models/Llama-3.2-3B-Instruct",
         batch_size=60,
         lang="ja"
     )
