@@ -62,8 +62,8 @@ def ASR_calculate(dataset_path, reject_sentence_path, base_model_path,prefix=Non
     total_layers = len(base_model.model.layers)
     del base_model
     torch.cuda.empty_cache()
-    # remove_indices_list = [[layer_idx] for layer_idx in range(total_layers-1)]
-    remove_indices_list = [[layer_idx] for layer_idx in range(total_layers)]
+    remove_indices_list = [[layer_idx] for layer_idx in range(total_layers-1)]
+    #remove_indices_list = [[layer_idx] for layer_idx in range(total_layers)]
     generate_kwargs = {
         "max_new_tokens": 256,
         "temperature": 0.7,
@@ -136,28 +136,29 @@ def ASR_calculate(dataset_path, reject_sentence_path, base_model_path,prefix=Non
 
 def main():
     ASR_calculate(
-        dataset_path="../dataset_for_sahara/Multilingual_ja_300.csv",
-        reject_sentence_path="./reject_keywords_ja_.txt",
-        base_model_path="../models/Llama-2-7b-chat-hf",
-        prefix = "multilingual_final"
+        dataset_path="../dataset_for_sahara/Multilingual_de_600.csv",
+        reject_sentence_path="./reject_keywords_de_.txt",
+        base_model_path="../models/Llama-3.1-8B-Instruct",
+        prefix = "multilingual_0208"
     )
     ASR_calculate(
-        dataset_path="../dataset_for_sahara/Multilingual_en_300.csv",
+        dataset_path="../dataset_for_sahara/Multilingual_en_600.csv",
         reject_sentence_path="./reject_keywords_en_.txt",
-        base_model_path="../models/Llama-2-7b-chat-hf",
-        prefix = "multilingual_final"
+        base_model_path="../models/Llama-3.1-8B-Instruct",
+        prefix = "multilingual_0208"
     )
     ASR_calculate(
         dataset_path="./attack_dataset/adv_bench_en.csv",
         reject_sentence_path="./reject_keywords_en_.txt",
-        base_model_path="../models/Llama-2-7b-chat-hf",
-        prefix = "adv_bench_final"
+        base_model_path="../models/Llama-3.1-8B-Instruct",
+        prefix = "adv_bench_0208"
     )
     ASR_calculate(
         dataset_path="./attack_dataset/adv_bench_ja.csv",
         reject_sentence_path="./reject_keywords_ja_.txt",
-        base_model_path="../models/Llama-2-7b-chat-hf",
-        prefix = "adv_bench_final"
+        base_model_path="../models/Llama-3.1-8B-Instruct",
+
+        prefix = "adv_bench_0208"
     )
     # ASR_calculate(
     #     dataset_path="../dataset_for_sahara/Multilingual_ja_600.csv",
