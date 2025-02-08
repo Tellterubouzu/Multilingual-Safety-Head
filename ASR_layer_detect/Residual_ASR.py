@@ -135,12 +135,12 @@ def ASR_calculate(dataset_path, reject_sentence_path, base_model_path,prefix=Non
         print(f"Removed {k} => ASR: {v:.4f}")
 
 def main():
-    ASR_calculate(
-        dataset_path="../dataset_for_sahara/Multilingual_de_600.csv",
-        reject_sentence_path="./reject_keywords_de_.txt",
-        base_model_path="../models/Llama-3.1-8B-Instruct",
-        prefix = "multilingual_0208"
-    )
+    # ASR_calculate(
+    #     dataset_path="../dataset_for_sahara/Multilingual_de_600.csv",
+    #     reject_sentence_path="./reject_keywords_de_.txt",
+    #     base_model_path="../models/Llama-3.1-8B-Instruct",
+    #     prefix = "multilingual_0208"
+    # )
     ASR_calculate(
         dataset_path="../dataset_for_sahara/Multilingual_en_600.csv",
         reject_sentence_path="./reject_keywords_en_.txt",
